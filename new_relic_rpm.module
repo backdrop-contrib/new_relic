@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Drupal module implementing New Relic.
+ * Backdrop module implementing New Relic.
  */
 
 /**
@@ -12,7 +12,7 @@ function new_relic_rpm_menu() {
   $items['admin/content/new-relic-rpm'] = array(
     'title' => 'New Relic RPM deployment',
     'description' => "Create a new deployment for this site's App.",
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('new_relic_rpm_deploy'),
     'access arguments' => array('create new relic rpm deployments'),
     'type' => MENU_LOCAL_TASK,
@@ -21,7 +21,7 @@ function new_relic_rpm_menu() {
   $items['admin/config/development/new-relic-rpm'] = array(
     'title' => 'New Relic RPM Settings',
     'description' => 'Alter settings and mange your New Relic RPM Integration.',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('new_relic_rpm_settings'),
     'access arguments' => array('administer new relic rpm'),
     'file' => 'new_relic_rpm.settings.inc',
@@ -131,18 +131,18 @@ function new_relic_rpm_init() {
  *   The exception object that was thrown.
  */
 function _new_relic_rpm_exception_handler($exception) {
-  require_once DRUPAL_ROOT . '/includes/errors.inc';
+  require_once BACKDROP_ROOT . '/includes/errors.inc';
 
   try {
 
     // Forward the exception to New Relic.
     newrelic_notice_error(NULL, $exception);
     // Set flag to prevent duplicate logging by watchdog.
-    $arr_error = _drupal_decode_exception($exception);
+    $arr_error = _backdrop_decode_exception($exception);
     $arr_error['new_relic_already_logged'] = TRUE;
 
     // Log the message to the watchdog and return an error page to the user.
-    _drupal_log_error($arr_error, TRUE);
+    _backdrop_log_error($arr_error, TRUE);
   }
   catch (Exception $exception2) {
     // Another uncaught exception was thrown while handling the first one.
@@ -150,8 +150,8 @@ function _new_relic_rpm_exception_handler($exception) {
     // uncaught exception being thrown.
     if (error_displayable()) {
       print '<h1>Additional uncaught exception thrown while handling exception.</h1>';
-      print '<h2>Original</h2><p>' . _drupal_render_exception_safe($exception) . '</p>';
-      print '<h2>Additional</h2><p>' . _drupal_render_exception_safe($exception2) . '</p><hr />';
+      print '<h2>Original</h2><p>' . _backdrop_render_exception_safe($exception) . '</p>';
+      print '<h2>Additional</h2><p>' . _backdrop_render_exception_safe($exception2) . '</p><hr />';
     }
   }
 }
@@ -172,18 +172,18 @@ function new_relic_rpm_boot() {
   $path = isset($_GET['q']) ? $_GET['q'] : '';
 
   if (!empty($exclu_urls)
-    && !new_relic_rpm_page_match($path, $exclu_urls)
+    && !new_relic_rpm_match_page($path, $exclu_urls)
   ) {
     $job_state = 'ignore';
   }
   elseif (!empty($ignore_urls)
-    && new_relic_rpm_page_match($path, $ignore_urls)) {
+    && new_relic_rpm_match_page($path, $ignore_urls)) {
     $job_state = 'ignore';
   }
 
   if ($job_state !== 'ignore'
     && !empty($bg_urls)
-    && new_relic_rpm_page_match($path, $bg_urls)
+    && new_relic_rpm_match_page($path, $bg_urls)
   ) {
     $job_state = 'bg';
   }
@@ -239,16 +239,16 @@ function new_relic_rpm_watchdog(array $log_entry) {
 function new_relic_rpm_preprocess_html(&$variables) {
   // Support RUM monitoring of cached pages by adding the New Relic timing header & footer.
   if (variable_get('new_relic_rpm_add_manual_rum_instrumentation', FALSE) && new_relic_rpm_extension_installed()) {
-    // drupal_add_html_head() works better than drupal_add_js because it can be weighted earlier in the DOM.
-    // @see http://www.metaltoad.com/blog/new-relic-real-user-monitoring-hooks-drupal
-    drupal_add_html_head(array(
+    // backdrop_add_html_head() works better than backdrop_add_js because it can be weighted earlier in the DOM.
+    // @see http://www.metaltoad.com/blog/new-relic-real-user-monitoring-hooks-backdrop
+    backdrop_add_html_head(array(
       '#type' => 'html_tag',
       '#tag' => 'script',
       '#value' => newrelic_get_browser_timing_header(FALSE),
       '#weight' => -999, // Right after charset attribute
     ), 'newrelic');
 
-    drupal_add_js(newrelic_get_browser_timing_footer(FALSE),
+    backdrop_add_js(newrelic_get_browser_timing_footer(FALSE),
       array('type' => 'inline', 'scope' => 'footer', 'weight' => 1000));
   }
 }
@@ -347,8 +347,8 @@ function new_relic_rpm_module_deploy($new_modules, $disable_modules) {
       $m_remv = '';
     }
 
-    _new_relic_rpm_deploy('Drupal Module Install/Uninstall',
-      'Drupal modules were installed: ' . ($modules_installed ? 'YES' : 'NO') . ' and uninstalled: ' . ($modules_removed ? 'YES' : 'NO'),
+    _new_relic_rpm_deploy('Backdrop Module Install/Uninstall',
+      'Backdrop modules were installed: ' . ($modules_installed ? 'YES' : 'NO') . ' and uninstalled: ' . ($modules_removed ? 'YES' : 'NO'),
       $m_inst . $m_remv);
   }
 }
@@ -418,7 +418,7 @@ function new_relic_rpm_curl($url, $post = array()) {
 /**
  * Check if a path matches any pattern in a set of patterns.
  *
- * This is a direct copy of drupal_match_path without the static cache since we
+ * This is a direct copy of backdrop_match_path without the static cache since we
  * don't need it. This is needed because we need our hook_boot to be able to
  * operate before path.inc has been bootstrapped.
  *
@@ -430,16 +430,21 @@ function new_relic_rpm_curl($url, $post = array()) {
  * @return int
  *   1 if there is a match, 0 if there is not a match.
  */
-function new_relic_rpm_page_match($path, $patterns) {
-  $regexp = '/^(' . preg_replace(array(
-    '/(\r\n?|\n)/',
-    '/\\\\\*/',
-    '/(^|\|)\\\\<front\\\\>($|\|)/',
-  ), array(
+function new_relic_rpm_match_page($path, $patterns) {
+  // Convert path settings to a regular expression.
+  // Therefore replace newlines with a logical or, /* with asterisks and the <front> with the frontpage.
+  $to_replace = array(
+    '/(\r\n?|\n)/', // newlines
+    '/\\\\\*/',     // asterisks
+    '/(^|\|)\\\\<front\\\\>($|\|)/' // <front>
+  );
+  $replacements = array(
     '|',
     '.*',
-    '\1' . preg_quote(variable_get('site_frontpage', 'node'), '/') . '\2',
-  ), preg_quote($patterns, '/')) . ')$/';
+    '\1' . preg_quote(config_get('system.core', 'site_frontpage'), '/') . '\2'
+  );
+  $patterns_quoted = preg_quote($patterns, '/');
+  $regexp = '/^(' . preg_replace($to_replace, $replacements, $patterns_quoted) . ')$/';
 
   return preg_match($regexp, $path);
 }

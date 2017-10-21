@@ -2,7 +2,7 @@
 
 /**
  * @file
- * New Relic RPM Drupal setting form and callbacks.
+ * New Relic RPM Backdrop setting form and callbacks.
  */
 
 /**
@@ -49,7 +49,7 @@ function new_relic_rpm_settings($form, &$form_state) {
   $form['new_relic_rpm_add_manual_rum_instrumentation'] = array(
     '#type' => 'checkbox',
     '#title' => t('Manually add RUM instructions to header and footer'),
-    '#description' => t("When compress cached pages and cache pages for anonymous users is turned on, the New Relic Browser JavaScript is not inserted into the served pages for anonymous users. This is because Drupal's pages are compressed before they are stored in the cache (with gzip), so New Relic's PHP agent does not have a chance to parse any HTML, to add header and footer automatically. In this situation, manual instrumentation provides a better opportunity to capture data for anonymous users. See also @reference_url.", array('@reference_url' => 'https://docs.newrelic.com/docs/agents/php-agent/frameworks-libraries/drupal-specific-functionality#page-load-timing-rum')),
+    '#description' => t("When compress cached pages and cache pages for anonymous users is turned on, the New Relic Browser JavaScript is not inserted into the served pages for anonymous users. This is because Backdrop's pages are compressed before they are stored in the cache (with gzip), so New Relic's PHP agent does not have a chance to parse any HTML, to add header and footer automatically. In this situation, manual instrumentation provides a better opportunity to capture data for anonymous users. See also @reference_url.", array('@reference_url' => 'https://docs.newrelic.com/docs/agents/php-agent/frameworks-libraries/drupal-specific-functionality#page-load-timing-rum')),
     '#default_value' => variable_get('new_relic_rpm_add_manual_rum_instrumentation', FALSE),
   );
 
@@ -90,7 +90,7 @@ function new_relic_rpm_settings($form, &$form_state) {
   $form['new_relic_rpm_api_key'] = array(
     '#type' => 'textfield',
     '#title' => t('API Key'),
-    '#description' => t('Enter your New Relic API key if you wish to view reports and analysis within Drupal'),
+    '#description' => t('Enter your New Relic API key if you wish to view reports and analysis within Backdrop'),
     '#default_value' => variable_get('new_relic_rpm_api_key', ''),
   );
 
@@ -106,7 +106,7 @@ function new_relic_rpm_settings($form, &$form_state) {
   $form['new_relic_rpm_override_exception_handler'] = array(
     '#type' => 'checkbox',
     '#title' => t('Override exception handler'),
-    '#description' => t('Check to override default Drupal exception handler and to have exceptions passed to New Relic'),
+    '#description' => t('Check to override default Backdrop exception handler and to have exceptions passed to New Relic'),
     '#default_value' => variable_get('new_relic_rpm_override_exception_handler', FALSE),
   );
 
@@ -127,7 +127,7 @@ function new_relic_rpm_settings($form, &$form_state) {
   $form['new_relic_rpm_suppress_module_not_enabled_error_on_cli'] = array(
     '#type' => 'checkbox',
     '#title' => t('Suppress error message on CLI when New Relic extension is not present'),
-    '#description' => t('By default the module will show an error message when New Relic extension is not present. Suppress that message only when drupal invoked from command line interface, for example by drush.'),
+    '#description' => t('By default the module will show an error message when New Relic extension is not present. Suppress that message only when backdrop invoked from command line interface, for example by drush.'),
     '#default_value' => variable_get('new_relic_rpm_suppress_module_not_enabled_error_on_cli', FALSE),
   );
 
@@ -191,9 +191,9 @@ function new_relic_rpm_deploy_submit($form, &$form_state) {
     $form_state['values']['deploy_revision']);
 
   if (strlen($deployments) > 20) {
-    drupal_set_message(t('New Relic RPM deployment created successfully'), 'status');
+    backdrop_set_message(t('New Relic RPM deployment created successfully'), 'status');
   }
   else {
-    drupal_set_message(t('New Relic RPM deployment failed to be created. Please ensure you have your account configured on the <a href="@settings">New Relic RPM Drupal admin page</a>.', array('@settings' => url('admin/config/development/new-relic-rpm'))), 'error');
+    backdrop_set_message(t('New Relic RPM deployment failed to be created. Please ensure you have your account configured on the <a href="@settings">New Relic RPM Backdrop admin page</a>.', array('@settings' => url('admin/config/development/new-relic-rpm'))), 'error');
   }
 }
