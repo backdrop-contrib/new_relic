@@ -6,74 +6,74 @@
  */
 
 /**
- * Main page for RPM reporting. List all the applications on this API Key.
+ * Main page for reporting. List all the applications on this API Key.
  */
-function new_relic_rpm_reporting() {
+function new_relic_reporting() {
 
   // If no API key is set, break here and error out.
-  $api_key = variable_get('new_relic_rpm_api_key', '');
+  $api_key = variable_get('new_relic_api_key', '');
   if (empty($api_key)) {
-    backdrop_set_message(t('You need to enter your New Relic API key from your New Relic account settings page before you are able to view reports within Backdrop. Visit the <a href="@settings">New Relic RPM Backdrop admin page</a> to enter your API key.', array('@settings' => url('admin/config/development/new-relic-rpm'))), 'error');
+    backdrop_set_message(t('You need to enter your New Relic API key from your New Relic account settings page before you are able to view reports within Backdrop. Visit the <a href="@settings">New Relic Backdrop admin page</a> to enter your API key.', array('@settings' => url('admin/config/development/new-relic'))), 'error');
     return '<h2>' . t('No API key found.') . '</h2>';
   }
 
   // Get basic app health.
   // This is also our first check for a bad key/access denied.
   // Only hit the REST API every 60 seconds.
-  if ($_SESSION['new_relic_rpm_health_time'] < $_SERVER['REQUEST_TIME'] - 60 || !$_SESSION['new_relic_rpm_health_xml']) {
-    $app_health = new_relic_rpm_curl('https://rpm.newrelic.com/accounts.xml?include=application_health');
+  if ($_SESSION['new_relic_health_time'] < $_SERVER['REQUEST_TIME'] - 60 || !$_SESSION['new_relic_health_xml']) {
+    $app_health = new_relic_curl('https://rpm.newrelic.com/accounts.xml?include=application_health');
   }
   else {
-    $app_health = $_SESSION['new_relic_rpm_health_xml'];
+    $app_health = $_SESSION['new_relic_health_xml'];
   }
   // Error out of the return is False, store data if it is good.
   if (!$app_health) {
-    backdrop_set_message(t('The New Relic REST API has denied your key. Either the key you entered on the <a href="@settings">New Relic RPM Backdrop admin page</a> is incorrect, or you have not enabled API access for this application within the New Relic RPM webiste.', array('@settings' => url('admin/config/development/new-relic-rpm'))), 'error');
+    backdrop_set_message(t('The New Relic REST API has denied your key. Either the key you entered on the <a href="@settings">New Relic Backdrop admin page</a> is incorrect, or you have not enabled API access for this application within the New Relic webiste.', array('@settings' => url('admin/config/development/new-relic'))), 'error');
     return '<h2>' . t('API access denied.') . '</h2>';
   }
   else {
-    $_SESSION['new_relic_rpm_health_time'] = $_SERVER['REQUEST_TIME'];
-    $_SESSION['new_relic_rpm_health_xml'] = $app_health;
+    $_SESSION['new_relic_health_time'] = $_SERVER['REQUEST_TIME'];
+    $_SESSION['new_relic_health_xml'] = $app_health;
   }
 
-  return new_relic_rpm_render_health($app_health);
+  return new_relic_render_health($app_health);
 }
 
 /**
  * Load the details for a specfic application.
  */
-function new_relic_rpm_reporting_details($cust_id, $app_id) {
+function new_relic_reporting_details($cust_id, $app_id) {
 
   $output = '';
 
   // If no API key is set, break here and error out.
-  $api_key = variable_get('new_relic_rpm_api_key', '');
+  $api_key = variable_get('new_relic_api_key', '');
   if (empty($api_key)) {
-    backdrop_set_message(t('You need to enter your New Relic API key from your New Relic account settings page before you are able to view reports within Backdrop. Visit the <a href="@settings">New Relic RPM Backdrop admin page</a> to enter your API key.', array('@settings' => url('admin/config/development/new-relic-rpm'))), 'error');
+    backdrop_set_message(t('You need to enter your New Relic API key from your New Relic account settings page before you are able to view reports within Backdrop. Visit the <a href="@settings">New Relic Backdrop admin page</a> to enter your API key.', array('@settings' => url('admin/config/development/new-relic'))), 'error');
     return '<h2>' . t('No API key found.') . '</h2>';
   }
 
   // Only hit the REST API every 60 seconds.
-  if ($_SESSION['new_relic_rpm_dash_time'] < $_SERVER['REQUEST_TIME'] - 60 || !$_SESSION['new_relic_rpm_dash_xml']) {
-    $app_dashboard = new_relic_rpm_curl('https://rpm.newrelic.com/application_dashboard?application_id=' . $app_id);
+  if ($_SESSION['new_relic_dash_time'] < $_SERVER['REQUEST_TIME'] - 60 || !$_SESSION['new_relic_dash_xml']) {
+    $app_dashboard = new_relic_curl('https://rpm.newrelic.com/application_dashboard?application_id=' . $app_id);
   }
   else {
-    $app_dashboard = $_SESSION['new_relic_rpm_dash_xml'];
+    $app_dashboard = $_SESSION['new_relic_dash_xml'];
   }
 
   // Error out if value is false, save cached copy of XML if it is good.
   if (!$app_dashboard) {
-    backdrop_set_message(t('The New Relic REST API has denied your key. Either the key you entered on the <a href="@settings">New Relic RPM Backdrop admin page</a> is incorrect, or you have not enabled API access for this application within the New Relic RPM webiste.', array('@settings' => url('admin/config/development/new-relic-rpm'))), 'error');
+    backdrop_set_message(t('The New Relic REST API has denied your key. Either the key you entered on the <a href="@settings">New Relic Backdrop admin page</a> is incorrect, or you have not enabled API access for this application within the New Relic webiste.', array('@settings' => url('admin/config/development/new-relic'))), 'error');
     return '<h2>' . t('API access denied.') . '</h2>';
   }
   else {
-    $_SESSION['new_relic_rpm_dash_time'] = $_SERVER['REQUEST_TIME'];
-    $_SESSION['new_relic_rpm_dash_xml'] = $app_dashboard;
+    $_SESSION['new_relic_dash_time'] = $_SERVER['REQUEST_TIME'];
+    $_SESSION['new_relic_dash_xml'] = $app_dashboard;
   }
 
   $output .= $app_dashboard;
 
-  $output .= new_relic_rpm_render_actions($cust_id, $app_id);
+  $output .= new_relic_render_actions($cust_id, $app_id);
 
   return $output;
 }
@@ -83,7 +83,7 @@ function new_relic_rpm_reporting_details($cust_id, $app_id) {
  *
  * @todo Figure out the threshold information
  */
-function new_relic_rpm_render_health($app_health) {
+function new_relic_render_health($app_health) {
 
   $app_obj = simplexml_load_string($app_health);
   $cust_id = (string) $app_obj->account->id;
@@ -115,7 +115,7 @@ function new_relic_rpm_render_health($app_health) {
     'Resp. Time',
     'Errors %',
     'Error Rate (EPM)',
-    'Throughput (rpm)',
+    'Throughput (RPM)',
     'App Busy %',
     'DB %',
     'CPU',
@@ -143,7 +143,7 @@ function new_relic_rpm_render_health($app_health) {
       }
       $row[] = $cell;
     }
-    $row[] = l(t('Details'), 'admin/reports/new-relic-rpm/details/' . $cust_id . '/' . $v['AppID'], array('query' => array('app_name' => $k)));
+    $row[] = l(t('Details'), 'admin/reports/new-relic/details/' . $cust_id . '/' . $v['AppID'], array('query' => array('app_name' => $k)));
     $table['rows'][] = $row;
   }
 
@@ -153,9 +153,9 @@ function new_relic_rpm_render_health($app_health) {
 /**
  * Render the quick actions menu.
  */
-function new_relic_rpm_render_actions($cust_id, $app_id) {
+function new_relic_render_actions($cust_id, $app_id) {
 
-  $rpm_url = "https://rpm.newrelic.com/accounts/{$cust_id}/applications/{$app_id}";
+  $new_relic_url = "https://rpm.newrelic.com/accounts/{$cust_id}/applications/{$app_id}";
   $actions = array(
     'transactions' => t('Web Transactions'),
     'databases' => t('Database Activity'),
@@ -168,14 +168,14 @@ function new_relic_rpm_render_actions($cust_id, $app_id) {
   $links = array(
     'overview' => array(
       'title' => t("Overview"),
-      'href' => $rpm_url,
+      'href' => $new_relic_url,
       'attributes' => array('class' => '_blank'),
     ),
   );
   foreach ($actions as $action => $title) {
     $links[$action] = array(
       'title' => $title,
-      'href' => "{$rpm_url}/{$action}",
+      'href' => "{$new_relic_url}/{$action}",
       'attributes' => array('target' => '_blank'),
     );
   }
