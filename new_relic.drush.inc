@@ -10,6 +10,7 @@
  */
 function new_relic_drush_init() {
   if (function_exists('module_exists') && module_exists('new_relic')) {
+    $config = config('new_relic.settings');
 
     // Make sure we have access to the needed functions.
     require_once dirname(__FILE__) . '/new_relic.module';
@@ -24,7 +25,7 @@ function new_relic_drush_init() {
     newrelic_add_custom_parameter('Drush command', implode(' ', $drush_command));
 
     // Set job state.
-    new_relic_set_job_state(variable_get('new_relic_track_drush', 'norm'));
+    new_relic_set_job_state($config->get('track_drush'));
   }
 }
 

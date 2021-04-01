@@ -68,13 +68,14 @@ function new_relic_permission() {
  * This is used to set cron tasks to be not tracked by if so desired.
  */
 function new_relic_cron() {
-  $cron_tracking = variable_get('new_relic_track_cron', 'norm');
+  $config = config('new_relic.settings');
+  $cron_tracking = $config->get('track_cron');
   new_relic_set_job_state($cron_tracking);
 
   // When using menu items as transaction names, we need to make sure that
   // cron runs still show up as cron.php. Otherwise, the cron runs default to
   // the menu item of the home page.
-  if (variable_get('new_relic_use_menu_item_as_transaction', FALSE)) {
+  if ($config->get('use_menu_item_as_transaction')) {
     newrelic_name_transaction('cron.php');
   }
 }
@@ -86,16 +87,17 @@ function new_relic_cron() {
  */
 function new_relic_init() {
   if (extension_loaded('newrelic')) {
-    if (variable_get('new_relic_override_exception_handler', FALSE)) {
+    $config = config('new_relic.settings');
+    if ($config->get('override_exception_handler')) {
       set_exception_handler('_new_relic_exception_handler');
     }
 
-    if (variable_get('new_relic_use_menu_item_as_transaction', FALSE)) {
+    if ($config->get('use_menu_item_as_transaction')) {
       $menu_item = menu_get_item();
       if (!empty($menu_item['path'])) {
         $name = $menu_item['path'];
 
-        if (variable_get('new_relic_add_node_type_to_node_page_paths', FALSE)) {
+        if ($config->get('add_node_type_to_node_page_paths')) {
           $parts = explode('/', $name);
           if (isset($parts[0]) && $parts[0] === 'node' && isset($parts[1]) && $parts[1] === '%') {
             $node = menu_get_object();
@@ -111,7 +113,7 @@ function new_relic_init() {
     }
 
     // This cannot be in hook_boot because we need user_has_role().
-    $ignored_roles = variable_get('new_relic_ignored_roles', array());
+    $ignored_roles = $config->get('ignored_roles');
     if (!empty($ignored_roles)) {
       foreach ($ignored_roles as $role_id) {
         if (user_has_role($role_id)) {
@@ -162,9 +164,10 @@ function _new_relic_exception_handler($exception) {
  * This is used to set various settings by URL.
  */
 function new_relic_boot() {
-  $ignore_urls = variable_get('new_relic_ignore_urls', '');
-  $bg_urls = variable_get('new_relic_bg_urls', '');
-  $exclu_urls = variable_get('new_relic_exclusive_urls', '');
+  $config = config('new_relic.settings');
+  $ignore_urls = $config->get('ignore_urls');
+  $bg_urls = $config->get('bg_urls');
+  $exclu_urls = $config->get('exclusive_urls');
   $job_state = '';
 
   // Handles cases where this is getting called from the command line and q
@@ -198,6 +201,7 @@ function new_relic_boot() {
  */
 function new_relic_watchdog(array $log_entry) {
   global $base_url;
+  $config = config('new_relic.settings');
 
   // Don't do anything if the new relic extension is not available.
   if (!function_exists('newrelic_notice_error')) {
@@ -210,7 +214,7 @@ function new_relic_watchdog(array $log_entry) {
   }
 
   // Check if the severity is supposed to be logged.
-  if (!in_array($log_entry['severity'], variable_get('new_relic_watchdog_severities', array()))) {
+  if (!in_array($log_entry['severity'], $config->get('watchdog_severities'))) {
     return;
   }
 
@@ -234,11 +238,13 @@ function new_relic_watchdog(array $log_entry) {
 }
 
 /**
- * Implements hook_preprocess_html().
+ * Implements hook_preprocess_page().
  */
-function new_relic_preprocess_html(&$variables) {
+function new_relic_preprocess_page(&$variables) {
+  $config = config('new_relic.settings');
+
   // Support RUM monitoring of cached pages by adding the New Relic timing header & footer.
-  if (variable_get('new_relic_add_manual_rum_instrumentation', FALSE) && new_relic_extension_installed()) {
+  if ($config->get('add_manual_rum_instrumentation') && new_relic_extension_installed()) {
     // backdrop_add_html_head() works better than backdrop_add_js because it can be weighted earlier in the DOM.
     // @see http://www.metaltoad.com/blog/new-relic-real-user-monitoring-hooks-backdrop
     backdrop_add_html_head(array(
@@ -288,11 +294,13 @@ function new_relic_extension_installed() {
 
   // If newrelic module isn't loaded into php, error and return.
   if (!$newrelic_module) {
+    $config = config('new_relic.settings');
+
     // Only throw error if we've booted far enough to watchdog.
     // i.e. drush updatedb.
     if (function_exists('module_implements')
-      && !variable_get('new_relic_suppress_module_not_enabled_error_always', FALSE)
-      && (php_sapi_name() != 'cli' || !variable_get('new_relic_suppress_module_not_enabled_error_on_cli', FALSE))) {
+      && !$config->get('suppress_module_not_enabled_error_always')
+      && (php_sapi_name() != 'cli' || !$config->get('suppress_module_not_enabled_error_on_cli'))) {
       watchdog('New Relic', 'New Relic PHP module not enabled.', array(), WATCHDOG_ERROR);
     }
     return FALSE;
@@ -325,11 +333,12 @@ function new_relic_modules_disabled($modules) {
  * Log module enable/disable actions as a deploy call to New Relic.
  */
 function new_relic_module_deploy($new_modules, $disable_modules) {
+  $config = config('new_relic.settings');
   // If the API Key and/or App name is/are not set, there is no sense in
   // attempting to create deployments.
-  if (variable_get('new_relic_module_deployment', FALSE) &&
+  if ($config->get('module_deployment') &&
       ini_get('newrelic.appname') &&
-      variable_get('new_relic_api_key', '')) {
+      $config->get('api_key')) {
     $modules_installed = !empty($new_modules);
     $modules_removed = !empty($disable_modules);
 
@@ -389,8 +398,8 @@ function _new_relic_deploy($user = NULL, $description = NULL, $changelog = NULL,
  * This is the generic cURL function all New Relic Web API calls go through.
  */
 function new_relic_curl($url, $post = array()) {
-
-  $api_key = variable_get('new_relic_api_key', '');
+  $config = config('new_relic.settings');
+  $api_key = $config->get('api_key');
 
   // Set the header with the API key.
   $headers[] = "x-api-key: {$api_key}";

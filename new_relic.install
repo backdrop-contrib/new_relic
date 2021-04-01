@@ -46,27 +46,34 @@ function new_relic_install() {
 }
 
 /**
- * Implements hook_uninstall().
+ * Implements hook_update_N().
  */
-function new_relic_uninstall() {
+function new_relic_update_1000() {
+  $config = config('new_relic.settings');
+  $settings = array(
+    'track_drush',
+    'track_cron',
+    'module_deployment',
+    'add_manual_rum_instrumentation',
+    'ignore_urls',
+    'ignored_roles',
+    'bg_urls',
+    'exclusive_urls',
+    'api_key',
+    'watchdog_severities',
+    'override_exception_handler',
+    'use_menu_item_as_transaction',
+    'add_node_type_to_node_page_paths',
+    'suppress_module_not_enabled_error_on_cli',
+    'suppress_module_not_enabled_error_always',
+  );
 
-  // Remove variables.
-  variable_del('new_relic_add_manual_rum_instrumentation');
-  variable_del('new_relic_track_cron');
-  variable_del('new_relic_ignore_urls');
-  variable_del('new_relic_ignored_roles');
-  variable_del('new_relic_bg_urls');
-  variable_del('new_relic_exclusive_urls');
-  variable_del('new_relic_api_key');
-  variable_del('new_relic_module_deployment');
-  variable_del('new_relic_app_name');
-  variable_del('new_relic_use_menu_item_as_transaction');
-  variable_del('new_relic_add_node_type_to_node_page_paths');
-  variable_del('new_relic_override_exception_handler');
-  variable_del('new_relic_track_drush');
-  variable_del('new_relic_watchdog_severities');
-  variable_del('new_relic_suppress_module_not_enabled_error_always');
-  variable_del('new_relic_suppress_module_not_enabled_error_on_cli');
+  foreach ($settings as $setting) {
+    $config->set($setting, update_variable_get('new_relic_' . $setting));
+    update_variable_del('new_relic_' . $setting);
+  }
+
+  $config->save();
 }
 
 /**

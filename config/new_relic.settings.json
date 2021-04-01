@@ -1,0 +1,18 @@
+{
+    "_config_name": "new_relic.settings",
+    "track_drush": "norm",
+    "track_cron": "norm",
+    "module_deployment": 0,
+    "add_manual_rum_instrumentation": false,
+    "ignore_urls": "",
+    "ignored_roles": [],
+    "bg_urls": "",
+    "exclusive_urls": "",
+    "api_key": "",
+    "watchdog_severities": [],
+    "override_exception_handler": false,
+    "use_menu_item_as_transaction": false,
+    "add_node_type_to_node_page_paths": false,
+    "suppress_module_not_enabled_error_on_cli": false,
+    "suppress_module_not_enabled_error_always": false
+}

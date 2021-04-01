@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Reporting page callbacks.
@@ -9,9 +8,10 @@
  * Main page for reporting. List all the applications on this API Key.
  */
 function new_relic_reporting() {
+  $config = config('new_relic.settings');
 
   // If no API key is set, break here and error out.
-  $api_key = variable_get('new_relic_api_key', '');
+  $api_key = $config->get('api_key');
   if (empty($api_key)) {
     backdrop_set_message(t('You need to enter your New Relic API key from your New Relic account settings page before you are able to view reports within Backdrop. Visit the <a href="@settings">New Relic Backdrop admin page</a> to enter your API key.', array('@settings' => url('admin/config/development/new-relic'))), 'error');
     return '<h2>' . t('No API key found.') . '</h2>';
@@ -47,7 +47,7 @@ function new_relic_reporting_details($cust_id, $app_id) {
   $output = '';
 
   // If no API key is set, break here and error out.
-  $api_key = variable_get('new_relic_api_key', '');
+  $api_key = $config->get('api_key');
   if (empty($api_key)) {
     backdrop_set_message(t('You need to enter your New Relic API key from your New Relic account settings page before you are able to view reports within Backdrop. Visit the <a href="@settings">New Relic Backdrop admin page</a> to enter your API key.', array('@settings' => url('admin/config/development/new-relic'))), 'error');
     return '<h2>' . t('No API key found.') . '</h2>';
