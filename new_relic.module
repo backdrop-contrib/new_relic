@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Backdrop module implementing New Relic.
@@ -230,7 +229,7 @@ function new_relic_watchdog(array $log_entry) {
     '@request_uri' => $log_entry['request_uri'],
     '@referer_uri' => $log_entry['referer'],
     '@uid' => $log_entry['uid'],
-    '@name' => format_username($log_entry['user']),
+    '@name' => user_format_name($log_entry['user']),
     '@message' => strip_tags(strtr($log_entry['message'], is_array($log_entry['variables']) ? $log_entry['variables'] : array())),
   ));
 
@@ -243,15 +242,17 @@ function new_relic_watchdog(array $log_entry) {
 function new_relic_preprocess_page(&$variables) {
   $config = config('new_relic.settings');
 
-  // Support RUM monitoring of cached pages by adding the New Relic timing header & footer.
+  // Support RUM monitoring of cached pages by adding the
+  // New Relic timing header & footer.
   if ($config->get('add_manual_rum_instrumentation') && new_relic_extension_installed()) {
-    // backdrop_add_html_head() works better than backdrop_add_js because it can be weighted earlier in the DOM.
+    // backdrop_add_html_head() works better than backdrop_add_js because it
+    // can be weighted earlier in the DOM.
     // @see http://www.metaltoad.com/blog/new-relic-real-user-monitoring-hooks-backdrop
     backdrop_add_html_head(array(
       '#type' => 'html_tag',
       '#tag' => 'script',
       '#value' => newrelic_get_browser_timing_header(FALSE),
-      '#weight' => -999, // Right after charset attribute
+      '#weight' => -999,
     ), 'newrelic');
 
     backdrop_add_js(newrelic_get_browser_timing_footer(FALSE),
@@ -261,6 +262,10 @@ function new_relic_preprocess_page(&$variables) {
 
 /**
  * Tells New Relic if a job should be ignored or counted as a background job.
+ *
+ * @param string $setting
+ *   Set to 'bg' to set the current transaction as a background job, or set it
+ *   to 'ignore' to make New Relic ignore the transaction.
  */
 function new_relic_set_job_state($setting) {
   if (!new_relic_extension_installed()) {
@@ -427,8 +432,8 @@ function new_relic_curl($url, $post = array()) {
 /**
  * Check if a path matches any pattern in a set of patterns.
  *
- * This is a direct copy of backdrop_match_path without the static cache since we
- * don't need it. This is needed because we need our hook_boot to be able to
+ * This is a direct copy of backdrop_match_path without the static cache since
+ * we don't need it. This is needed because we need our hook_boot to be able to
  * operate before path.inc has been bootstrapped.
  *
  * @param string $path
@@ -441,16 +446,17 @@ function new_relic_curl($url, $post = array()) {
  */
 function new_relic_match_page($path, $patterns) {
   // Convert path settings to a regular expression.
-  // Therefore replace newlines with a logical or, /* with asterisks and the <front> with the frontpage.
+  // Therefore replace newlines with a logical or, /* with asterisks and
+  // the <front> with the frontpage.
   $to_replace = array(
-    '/(\r\n?|\n)/', // newlines
-    '/\\\\\*/',     // asterisks
-    '/(^|\|)\\\\<front\\\\>($|\|)/' // <front>
+    '/(\r\n?|\n)/', // Newlines.
+    '/\\\\\*/',     // Asterisks.
+    '/(^|\|)\\\\<front\\\\>($|\|)/', // <front>
   );
   $replacements = array(
     '|',
     '.*',
-    '\1' . preg_quote(config_get('system.core', 'site_frontpage'), '/') . '\2'
+    '\1' . preg_quote(config_get('system.core', 'site_frontpage'), '/') . '\2',
   );
   $patterns_quoted = preg_quote($patterns, '/');
   $regexp = '/^(' . preg_replace($to_replace, $replacements, $patterns_quoted) . ')$/';

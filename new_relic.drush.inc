@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * New Relic Drush integration.

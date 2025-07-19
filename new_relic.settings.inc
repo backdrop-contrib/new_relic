@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * New Relic Backdrop setting form and callbacks.
