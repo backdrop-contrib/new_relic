@@ -21,10 +21,12 @@ function new_relic_requirements($phase) {
       'value' => $new_relic_loaded ? $t('Exists') : $t('Not loaded'),
       'severity' => $new_relic_loaded ? REQUIREMENT_OK : REQUIREMENT_ERROR,
     );
+
+    $config = config('new_relic.settings');
     $requirements['newrelic_apikey'] = array(
       'title' => $t('New Relic API key'),
-      'value' => (variable_get('new_relic_api_key', 0) == '' ? $t('Not set') : $t('Available')) . ' (' . l(t('Configure'), 'admin/config/development/new-relic') . ')',
-      'severity' => variable_get('new_relic_api_key', 0) == '' ? REQUIREMENT_INFO : REQUIREMENT_OK,
+      'value' => ($config->get('api_key') == '') ? $t('Not set') : $t('Available') . ' (' . l(t('Configure'), 'admin/config/development/new-relic') . ')',
+      'severity' => ($config->get('api_key') == '') ? REQUIREMENT_INFO : REQUIREMENT_OK,
     );
   }
 
